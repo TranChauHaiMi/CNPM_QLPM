@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "SimpleClinic"
 version = "3.3.8"
-description = "Phần mềm phòng khám Simple Clinic"
+description = "Phần mềm phòng mạch tư An Bình"
 license = "MIT"
 authors = ["vuongkienthanh <thanhstardust@outlook.com>"]
 readme = "README.md"
