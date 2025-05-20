@@ -1,6 +1,8 @@
 import wx
+import datetime as dt
 
 import db
+from db import Gender, Patient, Queue, Visit
 from misc import Config, vn_weekdays
 from state import State
 from ui.generics import DateTextCtrl, PhoneTextCtrl, ReadonlyVNAgeCtrl
@@ -25,11 +27,13 @@ from ui.mainview_widgets import (
 from ui.menubar import MyMenuBar
 
 
+
 class MainView(wx.Frame):
     def __init__(self, connection: "db.Connection"):
         super().__init__(
-            parent=None, pos=(0, 20), title="PHẦN MỀM PHÒNG KHÁM SIMPLE CLINIC"
+            parent=None, pos=(0, 20), title="PHẦN MỀM PHÒNG TƯ AN BÌNH"
         )
+        self.patients = []
 
         self.connection = connection
         self.config = Config.load()
@@ -247,3 +251,66 @@ class MainView(wx.Frame):
             (self.order_book.procedurepage.procedure_list, "procedure_list"),
         ]:
             widget.SetBackgroundColour(self.config.get_background_color(name))
+
+    def load_visit_details(self, visit: Visit):
+        # Lấy thông tin bệnh nhân đầy đủ từ database bằng connection.select
+        patient = self.connection.select(Patient, visit.patient_id)
+
+        if patient is None:
+            wx.MessageBox(f"Không tìm thấy bệnh nhân với ID {visit.patient_id}", "Lỗi dữ liệu")
+            return
+
+        # # --- Debugging: Kiểm tra dữ liệu bệnh nhân --- #
+        # print(f"Patient loaded: {patient.name}")
+        # print(f"Birthdate: {patient.birthdate}")
+        # # print(f"Age: {patient.age}") # Bỏ dòng debug age
+        # print(f"Phone: {patient.phone}")
+        # print(f"Address: {patient.address}")
+        # #print(f"Medical History: {patient.medical_history}")
+        # # ------------------------------------------- #
+
+        # Cập nhật thông tin bệnh nhân lên UI sử dụng thuộc tính của đối tượng Patient
+        self.name.SetValue(patient.name)
+        self.gender.SetValue(str(patient.gender) if patient.gender else "") # Chuyển đổi sang string
+        # Chuyển đổi ngày sinh sang định dạng dd/mm/YYYY nếu có
+        self.birthdate.SetValue(patient.birthdate.strftime("%d/%m/%Y") if patient.birthdate else "")
+        self.phone.SetValue(patient.phone or "")
+        self.address.SetValue(patient.address or "")
+        # Tính toán và hiển thị tuổi
+        if patient.birthdate:
+            today = dt.date.today()
+            age = today.year - patient.birthdate.year - ((today.month, today.day) < (patient.birthdate.month, patient.birthdate.day))
+            self.age.SetValue(str(age))
+        else:
+            self.age.SetValue("")
+
+        # Cập nhật thông tin bệnh sử từ thuộc tính medical_history
+        #self.past_history.SetValue(patient.medical_history or "")
+
+        # Cập nhật thông tin phiếu khám
+        self.diagnosis.SetValue(visit.diagnosis or "")
+        #self.vnote.SetValue(visit.medical_note or "")
+
+        # Cập nhật thông tin đo lường
+        self.weight.SetValue(str(visit.weight) if visit.weight else "")
+        self.height.SetValue(str(visit.height) if visit.height else "")
+        self.temperature.SetValue(str(visit.temperature) if visit.temperature else "")
+        self.days.SetValue(str(visit.days) if visit.days else "")
+
+        # Cập nhật thông tin đơn thuốc
+        #self.order_book.prescriptionpage.load(visit.prescriptions)
+
+        # Cập nhật thông tin điều trị
+        if hasattr(self, "treatmentPanel"):
+            self.treatmentPanel.load(visit.treatments)
+
+        # Cập nhật thông tin tái khám
+        #self.recheck.SetValue(str(visit.revisit_days or 0))
+        #self.follow.SetValue(visit.doctor_note or "")
+        #self.price.SetValue(str(visit.fee or "0"))
+
+        # Cập nhật state
+        self.state.patient = patient
+        self.state.visit = visit
+
+

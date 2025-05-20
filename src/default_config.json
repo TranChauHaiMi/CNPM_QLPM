@@ -1,8 +1,8 @@
 {
-  "clinic_name": "Phòng khám chuyên khoa nhi - Bs xxxx yyyyy zzzz",
-  "clinic_address": "Qui laboriosam corporis non quasi maiores velit culpa",
-  "clinic_phone_number": "0909.xxx.yyy",
-  "doctor_name": "Bs xxxx yyyyy zzzz",
+  "clinic_name": "Phòng mạch tư An Bình - Bs Nguyễn An Bình",
+  "clinic_address": "273 An Dương Vương, Phường 2, Quận 5, TP.HCM",
+  "clinic_phone_number": "0909.444.777",
+  "doctor_name": "Bs Nguyễn An Bình",
   "doctor_license": "123456/HCM-CCHN",
   "checkup_price": 50000,
   "default_days_for_prescription": 2,
@@ -14,7 +14,7 @@
     "tuýp"
   ],
   "follow_choices_dict": {
-    "Dấu hiệu chung": "Khám lại khi trẻ có những dấu hiệu sau: co giật, ngủ li bì hay vật vã, bứt rứt, thở mệt, nôn ói nhiều, sốt cao liên tục, tiêu máu",
+    "Dấu hiệu chung": "Khám lại khi có những dấu hiệu sau: co giật, ngủ li bì hay vật vã, bứt rứt, thở mệt, nôn ói nhiều, sốt cao liên tục, tiêu máu",
     "Dấu hiệu nặng TCM": "Sốt cao ≥39 độ C hay sốt liên tục trên 2 ngày - Giật mình, chới với, hốt hoảng bất thường - Ngủ gà, li bì hay bứt rứt - Run giật tay chân bất thường - Yếu tay chân, ngồi không vững, đi đứng loạng choạng - Thở bất thường: không đều, thở nhanh - Nuốt sặc, thay đổi giọng nói",
     "Dấu hiệu nặng SXH": "Lừ đừ, bứt rứt - Lạnh tay chân khi trẻ đã hết sốt (thường vào ngày thứ 4, thứ 5 của bệnh) - Đau bụng - Ói nhiều - Chảy máu bất thường: Chảy máu răng, máu mũi, đi cầu phân đen, ói ra máu"
   },

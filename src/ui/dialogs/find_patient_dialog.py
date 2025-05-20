@@ -252,16 +252,28 @@ class FindPatientDialog(wx.Dialog):
         dlg = DatePickerDialog(self.mv)
         if dlg.ShowModal() == wx.ID_OK:
             d = dlg.GetDate()
-            self.cur = self.mv.connection.execute(
+            rows = self.mv.connection.execute(
                 f"""
-                SELECT p.id AS pid, name, gender, birthdate
+                SELECT p.id AS pid, p.name, p.gender, p.birthdate
                 FROM {Visit.__tablename__} as v
-                JOIN {Patient.__tablename__} as p
-                ON p.id = v.patient_id
+                JOIN {Patient.__tablename__} as p ON p.id = v.patient_id
                 WHERE DATE(v.exam_datetime) = '{d.strftime("%Y-%m-%d")}'
-            """
-            )
+                """
+            ).fetchall()
+            
+            # Chuyển dữ liệu thành đối tượng Patient hoặc dict
+            self.mv.patients = []
+            for row in rows:
+                patient = Patient(
+                    id=row['pid'],
+                    name=row['name'],
+                    gender=row['gender'],
+                    dob=row['birthdate']
+                )
+                self.mv.patients.append(patient)
+
             self.rebuild()
+
 
     def onNext(self, _):
         if (not self.lc.is_done()) and self.lc.is_last():
@@ -300,7 +312,7 @@ class FindPatientDialog(wx.Dialog):
     def onEdit(self, _):
         pid = self.lc.pid
         assert pid is not None
-        EditFindPatientDialog(self).ShowModal()
+        PatientVisitsDialog(self, self.mv, pid).ShowModal()
 
     def onDelete(self, _):
         if (
@@ -340,3 +352,66 @@ class EditFindPatientDialog(EditPatientDialog):
         p = self.mv.connection.select(Patient, pid)
         assert p is not None
         return p
+
+class PatientVisitsDialog(wx.Dialog):
+    def __init__(self, parent: wx.Window, mv: "mainview.MainView", pid: int):
+        super().__init__(parent, title="Lịch sử khám bệnh", size=(700, 400))
+        self.mv = mv
+        self.pid = pid
+
+        self.lc = wx.ListCtrl(self, style=wx.LC_REPORT | wx.BORDER_SUNKEN)
+        self.lc.InsertColumn(0, "Mã phiếu", width=70)
+        self.lc.InsertColumn(1, "Thời gian khám", width=150)
+        self.lc.InsertColumn(2, "Chẩn đoán", width=400)
+
+        visits = self.mv.connection.execute(
+            f"""
+            SELECT id, exam_datetime, diagnosis
+            FROM {Visit.__tablename__}
+            WHERE patient_id = ?
+            ORDER BY exam_datetime DESC
+            """,
+            (self.pid,),
+        ).fetchall()
+
+        for visit in visits:
+            self.lc.Append(
+                [visit["id"], visit["exam_datetime"].strftime("%d/%m/%Y %H:%M"), visit["diagnosis"]]
+            )
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.lc, 1, wx.EXPAND | wx.ALL, 5)
+        self.SetSizerAndFit(sizer)
+
+        # Bổ sung bind sự kiện
+        self.lc.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.onVisitActivated)
+
+    # def onVisitActivated(self, event: wx.ListEvent):
+    #     idx = event.GetIndex()
+    #     visit_id = self.lc.GetItemText(idx, 0)
+    #     exam_time = self.lc.GetItemText(idx, 1)
+    #     diagnosis = self.lc.GetItemText(idx, 2)
+
+    #     # Ví dụ hiện popup chi tiết phiếu khám (bạn có thể thay bằng dialog khác)
+    #     wx.MessageBox(
+    #         f"Chi tiết phiếu khám:\nMã phiếu: {visit_id}\nThời gian khám: {exam_time}\nChẩn đoán: {diagnosis}",
+    #         "Chi tiết phiếu khám",
+    #         wx.OK | wx.ICON_INFORMATION,
+    #     )
+    def onVisitActivated(self, event: wx.ListEvent):
+        idx = event.GetIndex()
+        visit_id = int(self.lc.GetItemText(idx, 0))  # Lấy mã phiếu khám
+
+        # Lấy toàn bộ phiếu khám
+        visit = self.mv.connection.select(Visit, visit_id)
+        if not visit:
+            wx.MessageBox("Không tìm thấy phiếu khám", "Lỗi", wx.ICON_ERROR)
+            return
+
+        # Cập nhật vào state chính
+        self.mv.state.visit = visit
+        self.mv.load_visit_details(visit)  # Gọi hàm load đầy đủ
+
+        self.Close()
+
+

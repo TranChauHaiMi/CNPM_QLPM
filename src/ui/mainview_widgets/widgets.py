@@ -122,18 +122,28 @@ class PriceCtrl(NumberTextCtrl):
 
     def FetchPrice(self):
         state = self.mv.state
-        price: int = self.mv.config.checkup_price
-        price += sum(
-            state.all_warehouse[item.warehouse_id].sale_price * item.quantity
-            for item in chain(state.old_linedrug_list, state.new_linedrug_list)
-            if not item.outclinic
-        )
+
+        # Nếu có thuốc mua ngoài thì tự điều chỉnh giá khám trong config
+        if any(item.outclinic for item in chain(state.old_linedrug_list, state.new_linedrug_list)):
+            self.mv.config.checkup_price = 100_000  # ép giá khám về 100k
+
+        price = self.mv.config.checkup_price
+
+        # Chỉ cộng giá thuốc nếu KHÔNG mua ngoài
+        if not any(item.outclinic for item in chain(state.old_linedrug_list, state.new_linedrug_list)):
+            price += sum(
+                state.all_warehouse[item.warehouse_id].sale_price * item.quantity
+                for item in chain(state.old_linedrug_list, state.new_linedrug_list)
+                if not item.outclinic
+            )
+
+        # Luôn cộng giá thủ thuật
         price += sum(
             state.all_procedure[item.procedure_id].price
-            for item in chain(
-                state.old_lineprocedure_list, state.new_lineprocedure_list
-            )
+            for item in chain(state.old_lineprocedure_list, state.new_lineprocedure_list)
         )
+
+        print(f"[DEBUG] Tính tổng giá: {price}")
         self.ChangeValue(num_to_str_price(price))
 
     def Clear(self):

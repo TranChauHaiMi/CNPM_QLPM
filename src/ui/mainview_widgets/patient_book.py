@@ -13,6 +13,7 @@ StateItem = QueueStateItem | SeenTodayStateItem | AppointmentStateItem
 class PatientBook(wx.Notebook):
     def __init__(self, parent: "mainview.MainView"):
         super().__init__(parent)
+        self.all_patients = []  # Danh sách lưu tạm toàn bộ bệnh nhân
         self.mv = parent
         self.queuelistctrl = QueuePatientListCtrl(self)
         self.seentodaylistctrl = SeenTodayListCtrl(self)
@@ -29,6 +30,21 @@ class PatientBook(wx.Notebook):
         oldpage: wx.ListCtrl = self.GetPage(old)
         item: int = oldpage.GetFirstSelected()
         oldpage.Select(item, 0)
+
+    def load_patients(self):
+        patients = db.load_all_patients()  # giả định bạn có hàm này
+        self.all_patients = patients
+        for p in patients:
+            self.queuelistctrl.Append(p.to_listctrl_row())
+
+
+    def get_by_id(self, patient_id: int):
+        for patient in self.all_patients:
+            if patient.id == patient_id:
+                return patient
+        return None
+
+
 
 
 class BasePatientListCtrl(StateListCtrl):

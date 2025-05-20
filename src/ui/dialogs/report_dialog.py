@@ -41,7 +41,7 @@ def finance_report(
     query = f"""
         SELECT
             COUNT(DISTINCT vid) as visit_count,
-            SUM({config.checkup_price} + drug_sale_per_visit + procedure_profit_per_visit) AS revenue,
+            SUM(vprice) AS revenue,
             SUM(vprice) AS real_revenue,
             SUM(drug_purchase_per_visit) AS drug_purchase,
             SUM(drug_sale_per_visit) AS drug_sale,
@@ -51,8 +51,14 @@ def finance_report(
             SELECT
                 vid,
                 vprice,
-                CAST(TOTAL(v2.quantity * wh.purchase_price) AS INTEGER) AS drug_purchase_per_visit,
-                CAST(TOTAL(v2.quantity * wh.sale_price) AS INTEGER) AS drug_sale_per_visit,
+                CAST(
+                    TOTAL(CASE WHEN v2.outclinic = FALSE THEN v2.quantity * wh.purchase_price ELSE 0 END)
+                    AS INTEGER
+                ) AS drug_purchase_per_visit,
+                CAST(
+                    TOTAL(CASE WHEN v2.outclinic = FALSE THEN v2.quantity * wh.sale_price ELSE 0 END)
+                    AS INTEGER
+                ) AS drug_sale_per_visit,
                 CAST(TOTAL(pr.price) AS INTEGER) AS procedure_profit_per_visit
             FROM (
                 SELECT
@@ -60,15 +66,15 @@ def finance_report(
                     v.price AS vprice,
                     ld.warehouse_id,
                     ld.quantity,
+                    ld.outclinic,
                     lp.procedure_id
                 FROM (
-                    SELECT id,price FROM {Visit.__tablename__} {visit_where_clause}
+                    SELECT id, price FROM {Visit.__tablename__} {visit_where_clause}
                 ) AS v
                 LEFT JOIN {LineDrug.__tablename__} AS ld
                 ON ld.visit_id = v.id
                 LEFT JOIN {LineProcedure.__tablename__} AS lp
                 ON lp.visit_id = v.id
-                WHERE ld.outclinic == FALSE
             ) as v2
             LEFT JOIN {Warehouse.__tablename__} AS wh
             ON v2.warehouse_id = wh.id

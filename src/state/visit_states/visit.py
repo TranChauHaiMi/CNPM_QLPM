@@ -100,3 +100,5 @@ class VisitState:
         menubar.menuPreview.Enable(False)
         menubar.menuCopyVisitInfo.Enable(False)
         mv.Thaw()
+
+    

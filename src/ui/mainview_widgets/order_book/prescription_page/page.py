@@ -102,3 +102,16 @@ class PrescriptionPage(wx.Panel):
                 self.quantity.Value.strip() != "",
             ]
         )
+    
+    def load(self, prescriptions):
+        """
+        Hiển thị danh sách đơn thuốc trên giao diện.
+        """
+        self.prescription_list.ClearAll()  # hoặc danh sách nào bạn đang dùng
+        for p in prescriptions:
+            # Giả sử mỗi prescription có thuộc tính name, dose, duration
+            self.prescription_list.Append([
+                p.name,
+                p.dose,
+                p.duration
+            ])
